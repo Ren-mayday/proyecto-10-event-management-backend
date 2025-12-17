@@ -3,7 +3,11 @@ const Event = require("../models/Event");
 //GET /events -> público. Ordenados por fecha
 const getEvents = async (req, res) => {
   try {
-    const events = await Event.find().sort({ date: 1 });
+    const events = await Event.find()
+      .populate("createdBy", "userName email role")
+      .populate("attendees", "userName email")
+      .sort({ date: 1 });
+
     return res.status(200).json(events);
   } catch (error) {
     return res.status(500).json("Error al obtener eventos");
@@ -15,7 +19,9 @@ const getEventById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const event = await Event.findById(id).populate("attendees", "userName email");
+    const event = await Event.findById(id)
+      .populate("createdBy", "userName email role") // ← Populate creador
+      .populate("attendees", "userName email"); // ← Populate asistentes
 
     if (!event) {
       return res.status(404).json("Evento no encontrado");
