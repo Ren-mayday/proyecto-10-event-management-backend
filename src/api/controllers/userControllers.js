@@ -85,7 +85,6 @@ const updateUser = async (req, res) => {
       newPassword,
       newRole,
       currentPassword,
-      // Añado NUEVOS CAMPOS
       birthday,
       bio,
       hiddenTalents,
@@ -165,14 +164,38 @@ const updateUser = async (req, res) => {
       user.avatarURL = req.file.path;
     }
 
-    // Añado CAMPOS DE PERFIL
+    // -- NUEVOS CAMPOS DE PERFIL --
     if (birthday !== undefined) user.birthday = birthday;
     if (bio !== undefined) user.bio = bio;
     if (hiddenTalents !== undefined) user.hiddenTalents = hiddenTalents;
-    if (hobbies !== undefined) user.hobbies = hobbies;
-    if (interests !== undefined) user.interests = interests;
     if (favoriteFood !== undefined) user.favoriteFood = favoriteFood;
-    if (socialMedia !== undefined) user.socialMedia = socialMedia;
+
+    // Parsear hobbies si viene como string JSON
+    if (hobbies !== undefined) {
+      try {
+        user.hobbies = typeof hobbies === "string" ? JSON.parse(hobbies) : hobbies;
+      } catch (e) {
+        user.hobbies = hobbies;
+      }
+    }
+
+    // Parsear interests si viene como string JSON
+    if (interests !== undefined) {
+      try {
+        user.interests = typeof interests === "string" ? JSON.parse(interests) : interests;
+      } catch (e) {
+        user.interests = interests;
+      }
+    }
+
+    // Parsear socialMedia si viene como string JSON
+    if (socialMedia !== undefined) {
+      try {
+        user.socialMedia = typeof socialMedia === "string" ? JSON.parse(socialMedia) : socialMedia;
+      } catch (e) {
+        user.socialMedia = socialMedia;
+      }
+    }
 
     // 5. Guardar cambios
     const updated = await user.save();
@@ -186,6 +209,7 @@ const updateUser = async (req, res) => {
       user: userObj,
     });
   } catch (error) {
+    console.error("Error en updateUser:", error);
     return res.status(500).json({
       message: "Error en updateUser",
       error: error.message,
