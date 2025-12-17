@@ -8,6 +8,17 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     avatarURL: { type: String, required: false, trim: true, default: "" },
     role: { type: String, enum: ["user", "admin"], default: "user" },
+    birthday: { type: Date, required: false },
+    bio: { type: String, required: false, trim: true, maxlength: 300 },
+    hiddenTalents: { type: String, required: false, trim: true },
+    hobbies: { type: [String], required: false, default: [] },
+    interests: { type: [String], required: false, default: [] },
+    favoriteFood: { type: String, required: false, trim: true },
+    socialMedia: {
+      instagram: { type: String, required: false, trim: true },
+      twitter: { type: String, required: false, trim: true },
+      tiktok: { type: String, required: false, trim: true },
+    },
   },
   {
     timestamps: true,

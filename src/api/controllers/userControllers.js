@@ -79,7 +79,21 @@ const loginUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { newUserName, newEmail, newPassword, newRole, currentPassword } = req.body;
+    const {
+      newUserName,
+      newEmail,
+      newPassword,
+      newRole,
+      currentPassword,
+      // Añado NUEVOS CAMPOS
+      birthday,
+      bio,
+      hiddenTalents,
+      hobbies,
+      interests,
+      favoriteFood,
+      socialMedia,
+    } = req.body;
 
     // 1. Buscar usuario objetivo
     const user = await User.findById(id).select("+password");
@@ -92,8 +106,6 @@ const updateUser = async (req, res) => {
     const isOwner = req.user._id.equals(user._id);
 
     // 2. Permisos
-    // Admin puede actualizar cualquier user
-    // Usuario normal solo puede actualizar su propio perfil
     if (!isAdmin && !isOwner) {
       return res.status(403).json("No puedes modificar este usuario");
     }
@@ -113,7 +125,6 @@ const updateUser = async (req, res) => {
     // 4. Campos editables
 
     // -- Role (sólo admin) --
-
     if (newRole) {
       if (!isAdmin) {
         return res.status(403).json("Sólo un admin puede cambiar roles");
@@ -146,13 +157,22 @@ const updateUser = async (req, res) => {
       if (same) {
         return res.status(400).json("La nueva contraseña no puede ser igual a la actual");
       }
-      user.password = newPassword; // mongoose la hashea por el pre-save
+      user.password = newPassword;
     }
 
     // -- Avatar --
     if (req.file) {
       user.avatarURL = req.file.path;
     }
+
+    // Añado CAMPOS DE PERFIL
+    if (birthday !== undefined) user.birthday = birthday;
+    if (bio !== undefined) user.bio = bio;
+    if (hiddenTalents !== undefined) user.hiddenTalents = hiddenTalents;
+    if (hobbies !== undefined) user.hobbies = hobbies;
+    if (interests !== undefined) user.interests = interests;
+    if (favoriteFood !== undefined) user.favoriteFood = favoriteFood;
+    if (socialMedia !== undefined) user.socialMedia = socialMedia;
 
     // 5. Guardar cambios
     const updated = await user.save();
@@ -175,21 +195,11 @@ const updateUser = async (req, res) => {
 
 const getUserProfile = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(403).json("No tienes permisos para ver este usuario");
-    }
-
-    // Obtener parámetro
     const { userName } = req.params;
 
-    // Solo puedes ver user si:
-    // 1. Es admin
-    // 2. Es el mismo usuario dueño del perfil
-    const isAdmin = req.user.role === "admin";
-    const isOwner = req.user.userName === userName;
-
-    if (!isAdmin && !isOwner) {
-      return res.status(403).json("No tienes permisos para ver este usuario");
+    // Cualquier usuario autenticado puede ver perfiles
+    if (!req.user) {
+      return res.status(403).json("Debes estar logueado para ver perfiles");
     }
 
     const user = await User.findOne({ userName }).select("-password");
