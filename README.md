@@ -8,9 +8,9 @@
  
 ---
 
-##ENDPOINTS
+## ENDPOINTS
 
-###USERS
+### USERS
 | Method | Operation | Endpoint | Access | Request body | Response |
 | ---------- | ------------- | ------------ | ------------------ | ------------------- | ----------- |
 | POST   | Create   | `/users/register` | Public | `{ "userName": "string", "email": "string", "password": "string" }` | `201 Created / 400 Bad Request / 409 Conflict` |
@@ -19,7 +19,7 @@
 | PUT      | Update | `/usersi/:id` | Auth (admin or owner) | `{ "newUserName": "string", "newEmail": "string", "newPassword": "string", "currentPassword": "string" }` | `200 OK / 400 Bad Request / 401 Unauthorized / 403 Forbidden / 404 Not Found` |
 | DELETE | | Delete | `/users/:id` | `Auth (admin or owner)` | Not applicable | `200 OK / 403 Forbidden / 404 Not Found` |
 
-###EVENTS
+### EVENTS
 | Method | Operation | Endpoint | Access | Request body | Response |
 | ---------- | ------------- | ------------ | ------------------ | ------------------- | ----------- |
 | GET      | Read (list)   | `/events` | Public | Not applicable | `200 OK / 500 Internal Server Error` |
