@@ -8,11 +8,11 @@ const registerUser = async (req, res) => {
   console.log("📦 req.body:", req.body);
 
   try {
-    const { userName, email, password } = req.body;
+    const { userName, email, password, securityQuestion, securityAnswer } = req.body;
     console.log("1️⃣ Datos extraídos");
 
     // 1. Validar datos obligatorios
-    if (!userName || !email || !password) {
+    if (!userName || !email || !password || !securityQuestion || !securityAnswer) {
       return res.status(400).json({ message: "Todos los campos son obligatorios" });
     }
 
@@ -22,22 +22,34 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Este email no es válido" });
     }
 
-    // 3. Comprobar si user name está duplicado
+    // 3. Validar que la respuesta de seguridad no esté vacía
+    if (securityAnswer.trim().length < 2) {
+      return res.status(400).json({ message: "la respuesta de seguridad debe tener al menos 2 carácteres" });
+    }
+
+    // 4. Comprobar si user name está duplicado
     const existingUser = await User.findOne({ userName });
     if (existingUser) {
       return res.status(409).json("Este usuario ya existe");
     }
 
-    // 4. Comprobar si email está duplicado
+    // 5. Comprobar si email está duplicado
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return res.status(409).json("Este email ya existe");
     }
 
-    // 5. Crear nuevo usuario
-    const newUser = new User({ userName, email, password });
+    // 6. Crear nuevo usuario
+    const newUser = new User({
+      userName,
+      email,
+      password,
+      securityQuestion,
+      securityAnswer: securityAnswer.toLowerCase().trim(),
+    });
     const userSaved = await newUser.save();
     userSaved.password = undefined;
+    userSaved.securityAnswer = undefined;
 
     return res.status(201).json({ message: "Usuario registrado correctamente", user: userSaved });
   } catch (error) {
@@ -268,10 +280,95 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
+// POST /user/forgot-password
+// Público - devuelve la pregunta de seguridad
+const requestPasswordReset = async (req, res) => {
+  try {
+    const { userName, email } = req.body;
+
+    if (!userName && !email) {
+      return res.status(400).json({ message: "Debes proporcionar tu nombre de usuario o email" });
+    }
+
+    // Buscar usuario por userName o email
+    const user = await User.findOne({ $or: [{ userName }, { email }] });
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // return la pregunta de seguridad (sin datos sensibles)
+    return res.status(200).json({
+      message: "Usuario no encontrado",
+      userId: user._id,
+      userName: user.userName,
+      securityQuestion: user.securityQuestion,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "Error al buscar usuario", error: error.message });
+  }
+};
+
+// POST /users/reset-password
+// Público - valida la respuesta de seguridad y resetea contraseña
+const resetPassword = async (req, res) => {
+  try {
+    const { userId, securityAnswer, newPassword } = req.body;
+
+    // 1. Validar campos obligatorios
+    if (!userId || !securityAnswer || !newPassword) {
+      return res.status(400).json({ message: "Todos los campos son obligatorios" });
+    }
+
+    // 2. Buscar usuario
+    const user = await User.findById(userId).select("+password +securityAnswer");
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // 3. Validar respuesta de seguridad
+    const isValidAnswer = user.compareSecurityAnswer(securityAnswer.toLowerCase().trim());
+
+    if (!isValidAnswer) {
+      return res.status(401).json({ message: "La respuesta de seguridad incorrecta" });
+    }
+
+    // 4. Validar que la nueva contraseña no sea igual a la actual
+    const isSamePassword = await bcrypt.compare(newPassword, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({ message: "La nueva contraseña no puede ser igual a la anterior" });
+    }
+
+    // 5. Actualizar constraseña
+    user.password = newPassword;
+    await user.save();
+
+    // 6. Generar nuevo token para auto-loguear
+    const token = generateSign(user._id);
+
+    return res.status(200).json({
+      message: "Contraseña actualizada correctamente",
+      token,
+      user: {
+        id: user._id,
+        userName: user.userName,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.log("Error en resetPassword:", error);
+    return res.status(500).json({ message: "Error al resetear contraseña", error: error.message });
+  }
+};
+
 module.exports = {
   registerUser,
   loginUser,
   updateUser,
   getUserProfile,
   deleteUser,
+  requestPasswordReset,
+  resetPassword,
 };
