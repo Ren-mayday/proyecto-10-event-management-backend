@@ -19,21 +19,37 @@ const userSchema = new mongoose.Schema(
       twitter: { type: String, required: false, trim: true },
       tiktok: { type: String, required: false, trim: true },
     },
+    // Nuevos campos para la recuperación de contraseña
+    securityQuestion: { type: String, required: true, trim: true },
+    securityAnswer: { type: String, required: true },
   },
   {
     timestamps: true,
     collection: "users",
-  }
+  },
 );
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return;
+  if (!this.isModified("password") && !this.isModified("securityAnswer")) return;
 
-  this.password = await bcrypt.hash(this.password, 10);
+  // Hashear contraseña si se modifica
+  if (this.isModified("password")) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+
+  // Hashear respuesta de seguridad si ha sido modificada
+  if (this.isModified("securityAnswer")) {
+    this.securityAnswer = await bcrypt.hash(this.securityAnswer, 10);
+  }
 });
 
 userSchema.methods.comparePassword = function (password) {
   return bcrypt.compareSync(password, this.password);
+};
+
+// Añado nuevo método para comparar securityAnswer
+userSchema.methods.compareSecurityAnswer = function (answer) {
+  return bcrypt.compareSync(answer, this.securityAnswer);
 };
 
 const User = mongoose.model("User", userSchema, "users");
