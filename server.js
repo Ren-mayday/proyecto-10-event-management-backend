@@ -15,7 +15,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:5173", // URL de frontend en Vite
-      "https://event-managment-queer-tea-club.vercel.app/", // Hosteado en Vercel
+      "https://event-managment-queer-tea-club.vercel.app", // Hosteado en Vercel
     ],
     credentials: true, // Para enviar tokens/cookies
   }),
