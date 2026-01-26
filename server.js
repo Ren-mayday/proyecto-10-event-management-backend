@@ -13,9 +13,12 @@ connectCloudinary();
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // URL de frontend en Vite
+    origin: [
+      "http://localhost:5173", // URL de frontend en Vite
+      "https://event-managment-queer-tea-club.vercel.app", // Hosteado en Vercel
+    ],
     credentials: true, // Para enviar tokens/cookies
-  })
+  }),
 );
 
 app.use(express.json());
@@ -34,3 +37,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor levantado en: http://localhost:${PORT}`);
 });
+
+module.exports = app;
