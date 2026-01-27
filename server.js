@@ -18,6 +18,8 @@ app.use(
       "https://event-management-queer-tea-club.vercel.app", // Hosteado en Vercel
     ],
     credentials: true, // Para enviar tokens/cookies
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
@@ -33,9 +35,11 @@ app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Servidor levantado en: http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`Servidor levantado en: http://localhost:${PORT}`);
+  });
+}
 
 module.exports = app;
