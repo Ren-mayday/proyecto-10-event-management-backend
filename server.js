@@ -25,6 +25,11 @@ app.use(
 
 app.use(express.json());
 
+//Ruta de prueba antes de las rutas principales
+app.get("/", (req, res) => {
+  res.json({ message: "Backend funcionando correctamente ✅" });
+});
+
 // Rutas principales
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/events", eventRoutes);
