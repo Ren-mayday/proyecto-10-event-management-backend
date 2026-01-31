@@ -43,11 +43,8 @@ const createEvent = async (req, res) => {
       return res.status(400).json({ error: "Faltan campos obligatorios (título, fecha, hora y ubicación)" });
     }
 
-    // Detectar si la fecha está en horario de verano (CEST) o invierno (CET)
-    const testDate = new Date(date);
-    const offset = testDate.getTimezoneOffset() === -60 ? "+01:00" : "+02:00";
-    const dateTimeString = `${date}T${time}:00${offset}`;
-
+    // Uso UTC directamente, sin offset
+    const dateTimeString = `${date}T${time}:00Z`;
     const parsedDate = new Date(dateTimeString);
 
     if (isNaN(parsedDate.getTime())) {
@@ -100,16 +97,10 @@ const updateEvent = async (req, res) => {
     if (location) event.location = location;
     if (req.file) event.imageURL = req.file.path;
 
-    // Parsear fecha y hora correctamente
+    // Parsear fecha y hora correctamente, usar UTC directamente
     if (date) {
-      // Si se envía time, usarlo; si no, extraer la hora actual del evento
-      const timeToUse = time || event.date.toTimeString().slice(0, 5);
-
-      // Detectar offset de timezone
-      const testDate = new Date(date);
-      const offset = testDate.getTimezoneOffset() === -60 ? "+01:00" : "+02:00";
-      const dateTimeString = `${date}T${timeToUse}:00${offset}`;
-
+      const timeToUse = time || event.date.toISOString().slice(11, 16);
+      const dateTimeString = `${date}T${timeToUse}:00Z`;
       const parsedDate = new Date(dateTimeString);
 
       if (isNaN(parsedDate.getTime())) {
