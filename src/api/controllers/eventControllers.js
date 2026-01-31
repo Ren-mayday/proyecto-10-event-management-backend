@@ -93,17 +93,36 @@ const updateEvent = async (req, res) => {
       return res.status(403).json("No tienes permisos para editar este evento");
     }
 
-    const { title, description, date, location } = req.body;
+    const { title, description, date, time, location } = req.body;
 
     if (title) event.title = title;
     if (description) event.description = description;
-    if (date) event.date = date;
     if (location) event.location = location;
     if (req.file) event.imageURL = req.file.path;
+
+    // Parsear fecha y hora correctamente
+    if (date) {
+      // Si se envía time, usarlo; si no, extraer la hora actual del evento
+      const timeToUse = time || event.date.toTimeString().slice(0, 5);
+
+      // Detectar offset de timezone
+      const testDate = new Date(date);
+      const offset = testDate.getTimezoneOffset() === -60 ? "+01:00" : "+02:00";
+      const dateTimeString = `${date}T${timeToUse}:00${offset}`;
+
+      const parsedDate = new Date(dateTimeString);
+
+      if (isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ error: "Formato de fecha u hora inválido" });
+      }
+
+      event.date = parsedDate;
+    }
 
     const updatedEvent = await event.save();
     return res.status(200).json(updatedEvent);
   } catch (error) {
+    console.error(error);
     return res.status(500).json("Error al actualizar el evento");
   }
 };
@@ -118,7 +137,7 @@ const attendEvent = async (req, res) => {
     // $addToSet añade solo si no existe (evita duplicados automáticamente)
     const event = await Event.findByIdAndUpdate(id, { $addToSet: { attendees: userId } }, { new: true }).populate(
       "attendees",
-      "userName email avatarURL"
+      "userName email avatarURL",
     ); // Corregido: userName
 
     if (!event) {
@@ -145,7 +164,7 @@ const unattendEvent = async (req, res) => {
     const event = await Event.findByIdAndUpdate(
       id,
       { $pull: { attendees: userId } }, // $pull elimina del array
-      { new: true }
+      { new: true },
     ).populate("attendees", "userName email avatarURL");
 
     if (!event) {
