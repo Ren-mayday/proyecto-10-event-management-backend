@@ -1,6 +1,6 @@
 require("dotenv").config();
 const express = require("express");
-const cors = require("cors"); // ← Importar CORS
+const cors = require("cors");
 const { connectDB } = require("./src/config/db");
 const { connectCloudinary } = require("./src/config/cloudinary");
 const userRoutes = require("./src/api/routes/userRoutes");
@@ -8,16 +8,14 @@ const eventRoutes = require("./src/api/routes/eventRoutes");
 
 const app = express();
 
+// Conectar al inicio
 connectDB();
 connectCloudinary();
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173", // URL de frontend en Vite
-      "https://event-management-queer-tea-club.vercel.app", // Hosteado en Vercel
-    ],
-    credentials: true, // Para enviar tokens/cookies
+    origin: ["http://localhost:5173", "https://event-management-queer-tea-club.vercel.app"],
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
@@ -25,22 +23,10 @@ app.use(
 
 app.use(express.json());
 
-// Conectar a MongoDB antes de cada petición (serverless)
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    return res.status(500).json({ message: "Database connection failed" });
-  }
-});
-
-//Ruta de prueba antes de las rutas principales
 app.get("/", (req, res) => {
   res.json({ message: "Backend funcionando correctamente ✅" });
 });
 
-// Rutas principales
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/events", eventRoutes);
 
