@@ -25,6 +25,16 @@ app.use(
 
 app.use(express.json());
 
+// Conectar a MongoDB antes de cada petición (serverless)
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    return res.status(500).json({ message: "Database connection failed" });
+  }
+});
+
 //Ruta de prueba antes de las rutas principales
 app.get("/", (req, res) => {
   res.json({ message: "Backend funcionando correctamente ✅" });
